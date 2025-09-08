@@ -1,18 +1,14 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from .models import Task
 from .serializers import TaskSerializer
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework import status
 from django.http import Http404
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.throttling import AnonRateThrottle
+from .throttling import TenPerMinute
 
-
-
-# @api_view(['GET', 'POST'])
-# def tasks(request):
-#     items = Task.objects.select_related('owner').all()
-#     serialized = TaskSerializer(items, many=True)
-#     return Response(serialized.data)
 
 @api_view()
 def overview(request):
@@ -32,21 +28,25 @@ def get_task(pk):
     
 
 @api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticatedOrReadOnly])
+@throttle_classes([TenPerMinute, AnonRateThrottle])
 def task_list_create(request):
     if request.method == 'GET':
         tasks = Task.objects.all()
         serializer = TaskSerializer(tasks, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     elif request.method == 'POST':
         serializer = TaskSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(owner=request.user)
-            return Response(serializer.data, 201)
-        return Response(serializer.errors, 400)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
-@api_view(['GET', 'PUT'])
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticatedOrReadOnly])
+@throttle_classes([TenPerMinute, AnonRateThrottle])
 def task_detail(request, pk):
     item = get_task(pk)
     if request.method == 'GET':
@@ -57,4 +57,7 @@ def task_detail(request, pk):
         if serialized.is_valid():
             serialized.save()
             return Response(serialized.data)
-        return Response(serialized.errors)
+        return Response(serialized.errors, status=status.HTTP_400_BAD_REQUEST)  
+    if request.method == 'DELETE':
+            item.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
