@@ -1,4 +1,3 @@
-from django.shortcuts import render, get_object_or_404, redirect
 from .models import Task
 from .serializers import TaskSerializer
 from rest_framework.response import Response
@@ -8,15 +7,13 @@ from django.http import Http404
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.throttling import AnonRateThrottle
 from .throttling import TenPerMinute
+from .permissions import IsInAdminClass
+from .endpoints import all_urls
 
 
 @api_view()
+@permission_classes([IsInAdminClass])
 def overview(request):
-    all_urls = {
-        'To see all endpoints': '/overview/',
-        'List and Create': '/api/tasks/',
-        'Single View(Retrieve, update and delete)': 'api/task/<int:pk>/'
-    }
     return Response(all_urls)
 
 def get_task(pk):
