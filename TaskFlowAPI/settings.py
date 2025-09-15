@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'tasks',
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
+     'rest_framework_simplejwt.token_blacklist',
     'djoser',
 ]
 
@@ -151,5 +152,5 @@ DJOSER = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5)
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=20)
 }
